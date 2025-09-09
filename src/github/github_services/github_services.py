@@ -3,8 +3,7 @@ import logging
 from typing import Optional, List, Dict, Any
 
 from config import Settings
-
-
+from src.github.cosnt.const import COMMIT_NOTIFICATION, MERGE_NOTIFICATION
 
 logger = logging.getLogger(__name__)
 
@@ -54,3 +53,29 @@ async def get_latest_commit() -> Optional[Dict]:
 async def get_pull_requests() -> List[Dict]:
     data = await github_api_request("pulls?state=all&per_page=10")
     return data if data else []
+
+
+def format_commit_notification(commit: Dict) -> str:
+    commit_data = commit['commit']
+    author = commit_data['author']['name']
+    message = commit_data['message']
+    sha_short = commit['sha'][:7]
+    url = commit['html_url']
+    
+    return COMMIT_NOTIFICATION.format(
+        repo=Settings.GITHUB_REPO,
+        author=author,
+        sha_short=sha_short,
+        message=f"{message[:200]}{'...' if len(message) > 200 else ''}",
+        url=url
+    )
+
+
+def format_merge_notification(pr: Dict) -> str:
+    return MERGE_NOTIFICATION.format(
+        repo=Settings.GITHUB_REPO,
+        title=pr['title'],
+        author=pr['user']['login'],
+        number=pr['number'],
+        url=pr['html_url']
+    )
