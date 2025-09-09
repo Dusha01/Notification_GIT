@@ -32,4 +32,4 @@ TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 GITHUB_REPO=username/repository_name
 CHAT_IDS=chat_id1,chat_id2,chat_id3
 GITHUB_TOKEN=your_github_token_optional
-```bash
+```
