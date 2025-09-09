@@ -33,3 +33,8 @@ GITHUB_REPO=username/repository_name
 CHAT_IDS=chat_id1,chat_id2,chat_id3
 GITHUB_TOKEN=your_github_token_optional
 ```
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://python.org)
+[![aiogram](https://img.shields.io/badge/aiogram-3.x-green)](https://docs.aiogram.dev/)
+[![GitHub API](https://img.shields.io/badge/GitHub-API-lightgrey)](https://docs.github.com/en/rest)
