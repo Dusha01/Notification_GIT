@@ -11,7 +11,7 @@ async def cmd_start(message: Message):
         parse_mode=ParseMode.HTML
     )
 
-async def cmd_status(message: Message, bot: Bot):
+async def cmd_status(message: Message):
     await message.answer(
         STATUS_MESSAGE.format(
             repo=Settings.GITHUB_REPO,
