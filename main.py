@@ -18,7 +18,6 @@ async def on_startup(bot: Bot):
     logger.info(f"📁 Tracking repository: {Settings.GITHUB_REPO}")
     logger.info(f"👥 Notification recipients: {len(Settings.CHAT_IDS)} users")
     
-    # Запускаем отслеживание
     asyncio.create_task(start_tracking(bot))
 
 
