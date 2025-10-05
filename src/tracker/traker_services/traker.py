@@ -26,7 +26,6 @@ class Tracker:
         self.is_tracking = False
         self.task = None
 
-
     async def initialize(self):
         """Инициализация отслеживания - получаем текущие состояния всех веток и PR"""
         try:
@@ -34,12 +33,11 @@ class Tracker:
             if branches:
                 for branch in branches:
                     branch_name = branch['name']
-                    commits = await get_branch_commits(branch_name)
+                    commits = await get_branch_commits(branch_name, per_page=20)
                     if commits:
                         self.last_commit_shas[branch_name] = {commit['sha'] for commit in commits}
                         logger.info(f"📝 Tracking branch '{branch_name}': {len(commits)} commits")
             
-            # Инициализируем состояние PR
             prs = await get_pull_requests()
             for pr in prs:
                 pr_number = pr['number']
@@ -55,45 +53,75 @@ class Tracker:
             logger.error(f"Error initializing tracking: {e}")
 
 
+    async def check_new_branches(self, bot: Bot) -> bool:
+        """Проверяет и добавляет новые ветки для отслеживания"""
+        changes_detected = False
+        
+        try:
+            current_branches = await get_branches()
+            if not current_branches:
+                return False
+            
+            current_branch_names = {branch['name'] for branch in current_branches}
+            tracked_branch_names = set(self.last_commit_shas.keys())
+            
+            new_branches = current_branch_names - tracked_branch_names
+            
+            for branch_name in new_branches:
+                if branch_name not in self.last_commit_shas:
+                    commits = await get_branch_commits(branch_name, per_page=20)
+                    if commits:
+                        self.last_commit_shas[branch_name] = {commit['sha'] for commit in commits}
+                        logger.info(f"🆕 New branch detected: '{branch_name}' with {len(commits)} commits")
+                        
+                        if len(commits) > 0:
+                            latest_commit = commits[0]
+                            notification = self.format_new_branch_notification(latest_commit, branch_name)
+                            await send_notification(bot, notification)
+                            changes_detected = True
+        
+        except Exception as e:
+            logger.error(f"Error checking new branches: {e}")
+            
+        return changes_detected
+
+
     async def check_commits(self, bot: Bot) -> bool:
         """Проверяет новые коммиты во всех ветках"""
         changes_detected = False
-        current_time = datetime.now(timezone.utc)
         
         try:
-            branches = await get_branches()
-            if not branches:
-                return False
+            await self.check_new_branches(bot)
             
-            for branch in branches:
-                branch_name = branch['name']
-                
-                commits = await get_branch_commits(branch_name)
-                if not commits:
-                    continue
-                
-                if branch_name not in self.last_commit_shas:
-                    self.last_commit_shas[branch_name] = {commit['sha'] for commit in commits}
-                    continue
-                
-                current_shas = {commit['sha'] for commit in commits}
-                known_shas = self.last_commit_shas[branch_name]
-                new_shas = current_shas - known_shas
-                
-                if new_shas:
-                    for commit in reversed(commits):  # reversed чтобы получить старые коммиты первыми
-                        if commit['sha'] in new_shas:
-                            notification = format_commit_notification(commit, branch_name)
-                            await send_notification(bot, notification)
-                            changes_detected = True
+            for branch_name in list(self.last_commit_shas.keys()):
+                try:
+                    commits = await get_branch_commits(branch_name, per_page=20)
+                    if not commits:
+                        continue
                     
-                    self.last_commit_shas[branch_name] = current_shas
-                    logger.info(f"📬 Found {len(new_shas)} new commits in branch '{branch_name}'")
+                    current_shas = {commit['sha'] for commit in commits}
+                    known_shas = self.last_commit_shas[branch_name]
+                    new_shas = current_shas - known_shas
+                    
+                    if new_shas:
+                        logger.info(f"📬 Found {len(new_shas)} new commits in branch '{branch_name}'")
+                        
+                        for commit in reversed(commits):  # reversed чтобы получить старые коммиты первыми
+                            if commit['sha'] in new_shas:
+                                notification = format_commit_notification(commit, branch_name)
+                                await send_notification(bot, notification)
+                                changes_detected = True
+                                await asyncio.sleep(0.5)  # Небольшая задержка между уведомлениями
+                        
+                        self.last_commit_shas[branch_name] = current_shas
+                
+                except Exception as e:
+                    logger.error(f"Error checking commits in branch '{branch_name}': {e}")
+                    continue
         
         except Exception as e:
             logger.error(f"Error checking commits: {e}")
         
-        self.last_check_time = current_time
         return changes_detected
 
 
@@ -127,6 +155,27 @@ class Tracker:
         return changes_detected
 
 
+    def format_new_branch_notification(self, commit: Dict, branch_name: str) -> str:
+        """Форматирует уведомление о новой ветке"""
+        commit_data = commit['commit']
+        author = commit_data['author']['name']
+        message = commit_data['message']
+        sha_short = commit['sha'][:7]
+        url = commit['html_url']
+        
+        return f"""
+🌿 <b>Создана новая ветка: {branch_name}</b>
+
+📦 <b>Последний коммит:</b>
+👤 <b>Автор:</b> {author}
+🔖 <b>Хеш:</b> <code>{sha_short}</code>
+
+📝 <b>Сообщение:</b>
+{message[:200]}{'...' if len(message) > 200 else ''}
+
+🔗 <a href='{url}'>Посмотреть коммит</a>
+"""
+
     async def check_updates(self, bot: Bot):
         """Основная функция проверки обновлений"""
         try:
@@ -142,7 +191,6 @@ class Tracker:
                 
         except Exception as e:
             logger.error(f"❌ Error in update check: {e}")
-
 
     async def start_periodic_check(self, bot: Bot):
         """Запускает периодическую проверку"""

@@ -102,3 +102,12 @@ def format_merge_notification(pr: Dict) -> str:
         number=pr['number'],
         url=pr['html_url']
     )
+
+
+async def get_branch_commits(branch: str, since: str = None, per_page: int = 10) -> List[Dict]:
+    endpoint = f"commits?sha={branch}&per_page={per_page}"
+    if since:
+        endpoint += f"&since={since}"
+    
+    data = await github_api_request(endpoint)
+    return data if data else []
