@@ -22,7 +22,7 @@ cd github-notification-bot
 ## 2. Установка зависимостей
 
 ```bash
-pip install pip.txt
+pip install requirements.txt
 ```
 
 ## 3. Настройка переменных окружения
