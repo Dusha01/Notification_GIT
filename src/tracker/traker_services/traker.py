@@ -9,6 +9,7 @@ from src.github.github_services.github_services import (
     get_branches,
     get_branch_commits,
     get_pull_requests,
+    get_pull_request_commits,
     close_session,
     format_commit_notification,
     format_merge_notification
@@ -148,7 +149,17 @@ class Tracker:
             old_state = self.last_pr_state[pr_number]
             
             if not old_state['merged'] and pr_merged:
-                notification = format_merge_notification(pr)
+                # Получаем коммиты PR
+                pr_commits = await get_pull_request_commits(pr_number)
+                if pr_commits:
+                    # Добавляем SHA коммитов в отслеживаемые для base ветки, чтобы не дублировать уведомления
+                    base_branch = pr['base']['ref']
+                    if base_branch in self.last_commit_shas:
+                        pr_commit_shas = {commit['sha'] for commit in pr_commits}
+                        self.last_commit_shas[base_branch].update(pr_commit_shas)
+                        logger.info(f"Added {len(pr_commits)} PR commits to tracking for branch '{base_branch}'")
+                
+                notification = format_merge_notification(pr, pr_commits)
                 await send_notification(bot, notification)
                 changes_detected = True
         
