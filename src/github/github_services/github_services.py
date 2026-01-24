@@ -54,8 +54,8 @@ async def get_latest_commit(branch: str = None) -> Optional[Dict]:
     return data[0] if data and len(data) > 0 else None
 
 
-async def get_branch_commits(branch: str, since: str = None) -> List[Dict]:
-    endpoint = f"commits?sha={branch}&per_page=10"
+async def get_branch_commits(branch: str, since: str = None, per_page: int = 10) -> List[Dict]:
+    endpoint = f"commits?sha={branch}&per_page={per_page}"
     if since:
         endpoint += f"&since={since}"
     
@@ -65,6 +65,11 @@ async def get_branch_commits(branch: str, since: str = None) -> List[Dict]:
 
 async def get_pull_requests() -> List[Dict]:
     data = await github_api_request("pulls?state=all&per_page=10")
+    return data if data else []
+
+
+async def get_pull_request_commits(pr_number: int) -> List[Dict]:
+    data = await github_api_request(f"pulls/{pr_number}/commits")
     return data if data else []
 
 
@@ -94,20 +99,26 @@ def format_commit_notification(commit: Dict, branch: str = None) -> str:
     return base_text
 
 
-def format_merge_notification(pr: Dict) -> str:
-    return MERGE_NOTIFICATION.format(
+def format_merge_notification(pr: Dict, commits: List[Dict] = None) -> str:
+    base_text = MERGE_NOTIFICATION.format(
         repo=Settings.GITHUB_REPO,
         title=pr['title'],
         author=pr['user']['login'],
         number=pr['number'],
         url=pr['html_url']
     )
-
-
-async def get_branch_commits(branch: str, since: str = None, per_page: int = 10) -> List[Dict]:
-    endpoint = f"commits?sha={branch}&per_page={per_page}"
-    if since:
-        endpoint += f"&since={since}"
     
-    data = await github_api_request(endpoint)
-    return data if data else []
+    if commits:
+        commits_text = "\n\n📝 <b>Коммиты в PR:</b>\n"
+        for commit in commits[:5]:  # Ограничиваем до 5 коммитов
+            sha_short = commit['sha'][:7]
+            message = commit['commit']['message'].split('\n')[0][:100]
+            author = commit['commit']['author']['name']
+            commits_text += f"• <code>{sha_short}</code> {message} ({author})\n"
+        
+        if len(commits) > 5:
+            commits_text += f"... и ещё {len(commits) - 5} коммитов"
+        
+        base_text += commits_text
+    
+    return base_text
