@@ -17,6 +17,8 @@ class Settings(BaseSettings):
 
     CHECK_INTERVAL: int = 60
 
+    LANGUAGE: str = "ru"  # ru | en
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

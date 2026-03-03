@@ -7,6 +7,7 @@ from aiogram import Bot
 
 from src.core.config import settings
 from src.core.dependencies import get_github_service, get_notification_sender
+from src.i18n import t
 from src.modules.bot.domain.services.notification_sender import NotificationSender
 from src.modules.github.application.use_cases.github_service import GitHubService
 from src.modules.github.domain.entities.commit import Commit
@@ -167,21 +168,16 @@ class TrackRepositoryUseCase:
         message = commit.message[:200] + (
             "..." if len(commit.message) > 200 else ""
         )
-        return f"""
-🌿 <b>Создана новая ветка: {branch_name}</b>
-
-📦 <b>Последний коммит:</b>
-👤 <b>Автор:</b> {commit.author.name}
-🔖 <b>Хеш:</b> <code>{commit.sha_short}</code>
-
-📝 <b>Сообщение:</b>
-{message}
-
-🔗 <a href='{commit.html_url}'>Посмотреть коммит</a>
-"""
+        return t(
+            "NEW_BRANCH_NOTIFICATION",
+            branch_name=branch_name,
+            author=commit.author.name,
+            sha_short=commit.sha_short,
+            message=message,
+            url=commit.html_url,
+        )
 
     async def _check_updates(self) -> None:
-        """Main update check loop."""
         try:
             logger.info("🔍 Checking for updates...")
             commit_changes = await self._check_commits()
@@ -210,7 +206,6 @@ class TrackRepositoryUseCase:
 
 
     async def stop(self) -> None:
-        """Stop tracking."""
         self._is_tracking = False
         if self._task:
             self._task.cancel()
