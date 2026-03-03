@@ -81,6 +81,16 @@ TRANSLATIONS = {
 🔗 <a href='{url}'>Посмотреть PR</a>
 """,
         "MERGE_SHA_LINE": "\n🔖 <b>Merge commit:</b> <code>{merge_sha_short}</code>",
+        "FAST_FORWARD_MERGE_NOTIFICATION": """
+🔀 <b>Слияние (fast-forward) в {repo}</b>
+
+🌿 <b>Ветки:</b> {base_branch} ← {head_branch}
+📊 <b>Коммитов:</b> {count}
+👤 <b>Автор последнего коммита:</b> {author}
+🔖 <b>Хеш:</b> <code>{sha_short}</code>
+
+🔗 <a href='{url}'>Посмотреть изменения</a>
+""",
         "COMMITS_IN_PR": "\n\n📝 <b>Коммиты в PR:</b>\n",
         "AND_MORE_COMMITS": "... и ещё {count} коммитов",
         "NEW_BRANCH_NOTIFICATION": """
@@ -176,6 +186,16 @@ I automatically track repository: <code>{repo}</code>
 🔗 <a href='{url}'>View PR</a>
 """,
         "MERGE_SHA_LINE": "\n🔖 <b>Merge commit:</b> <code>{merge_sha_short}</code>",
+        "FAST_FORWARD_MERGE_NOTIFICATION": """
+🔀 <b>Merge (fast-forward) in {repo}</b>
+
+🌿 <b>Branches:</b> {base_branch} ← {head_branch}
+📊 <b>Commits:</b> {count}
+👤 <b>Last commit author:</b> {author}
+🔖 <b>Hash:</b> <code>{sha_short}</code>
+
+🔗 <a href='{url}'>View changes</a>
+""",
         "COMMITS_IN_PR": "\n\n📝 <b>Commits in PR:</b>\n",
         "AND_MORE_COMMITS": "... and {count} more commits",
         "NEW_BRANCH_NOTIFICATION": """

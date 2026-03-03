@@ -115,6 +115,34 @@ class TrackRepositoryUseCase:
             logger.error(f"Error checking new branches: {e}")
         return changes_detected
 
+
+    async def _detect_fast_forward_source(
+        self,
+        base_branch: str,
+        new_shas: Set[str],
+        new_commits: list,
+    ) -> Optional[str]:
+        """Check if new commits are from a fast-forward merge. Returns source branch or None."""
+        if not new_commits or not new_shas:
+            return None
+        branches = await self._github.get_branches()
+        branch_names = {b.name for b in branches}
+        latest_new_sha = new_commits[-1].sha
+        for candidate in ["main", "master"]:
+            if candidate == base_branch or candidate not in branch_names:
+                continue
+            source_commits = await self._github.get_branch_commits(
+                candidate, per_page=50
+            )
+            if not source_commits:
+                continue
+            source_shas = {c.sha for c in source_commits}
+            source_tip = source_commits[0].sha
+            if new_shas.issubset(source_shas) and latest_new_sha == source_tip:
+                return candidate
+        return None
+
+
     async def _find_merge_pr_for_branch(
         self, branch_name: str
     ) -> Optional[PullRequest]:
@@ -151,15 +179,30 @@ class TrackRepositoryUseCase:
                     new_shas = current_shas - known_shas
 
                     if new_shas:
-                        logger.info(
-                            f"📬 Found {len(new_shas)} new commits in branch '{branch_name}'"
-                        )
                         new_commits = [
                             c for c in reversed(commits) if c.sha in new_shas
                         ]
-                        notification = GitHubService.format_push_notification(
-                            new_commits, branch_name
+                        head_branch = await self._detect_fast_forward_source(
+                            branch_name, new_shas, new_commits
                         )
+                        if head_branch:
+                            logger.info(
+                                f"🔀 Fast-forward merge detected: {head_branch} → '{branch_name}'"
+                            )
+                            notification = (
+                                GitHubService.format_fast_forward_merge_notification(
+                                    base_branch=branch_name,
+                                    head_branch=head_branch,
+                                    commits=new_commits,
+                                )
+                            )
+                        else:
+                            logger.info(
+                                f"📬 Found {len(new_shas)} new commits in branch '{branch_name}'"
+                            )
+                            notification = GitHubService.format_push_notification(
+                                new_commits, branch_name
+                            )
                         await self._notifier.send(notification)
                         changes_detected = True
 

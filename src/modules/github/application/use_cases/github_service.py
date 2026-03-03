@@ -90,6 +90,26 @@ class GitHubService:
 
 
     @staticmethod
+    def format_fast_forward_merge_notification(
+        base_branch: str,
+        head_branch: str,
+        commits: List[Commit],
+    ) -> str:
+        """Format notification for fast-forward merge (no PR, no merge commit)."""
+        latest = commits[-1] if commits else None
+        return t(
+            "FAST_FORWARD_MERGE_NOTIFICATION",
+            repo=settings.GITHUB_REPO,
+            base_branch=base_branch,
+            head_branch=head_branch,
+            count=len(commits),
+            author=latest.author.name if latest else "—",
+            sha_short=latest.sha_short if latest else "—",
+            url=latest.html_url if latest else "",
+        )
+
+
+    @staticmethod
     def format_merge_notification(pr: PullRequest) -> str:
         merge_sha_line = ""
         if pr.merge_commit_sha:
