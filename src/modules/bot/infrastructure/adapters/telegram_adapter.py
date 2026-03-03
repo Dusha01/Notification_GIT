@@ -23,7 +23,7 @@ class TelegramNotificationAdapter(NotificationSender):
 
     async def send(self, text: str) -> None:
         """Send notification to configured chat IDs."""
-        chat_ids = settings.chat_ids_list
+        chat_ids = settings.chat_id_list
         if not chat_ids:
             logger.warning("No chat IDs configured for notifications")
             return

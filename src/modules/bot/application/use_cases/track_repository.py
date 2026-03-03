@@ -1,7 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timezone
-from typing import Dict, Set
+from typing import Dict, Optional, Set
 
 from aiogram import Bot
 
@@ -77,8 +76,32 @@ class TrackRepositoryUseCase:
                 commits = await self._github.get_branch_commits(
                     branch_name, per_page=20
                 )
-                if commits:
-                    self._last_commit_shas[branch_name] = {c.sha for c in commits}
+                if not commits:
+                    continue
+
+                self._last_commit_shas[branch_name] = {c.sha for c in commits}
+
+                merge_pr = await self._find_merge_pr_for_branch(branch_name)
+                if merge_pr:
+                    logger.info(
+                        f"🔀 Merge detected into new branch '{branch_name}' (PR #{merge_pr.number})"
+                    )
+                    pr_commits = await self._github.get_pull_request_commits(
+                        merge_pr.number
+                    )
+                    if pr_commits:
+                        pr_shas = {c.sha for c in pr_commits}
+                        if merge_pr.merge_commit_sha:
+                            pr_shas.add(merge_pr.merge_commit_sha)
+                        self._last_commit_shas[branch_name].update(pr_shas)
+                    self._last_pr_state[merge_pr.number] = {
+                        "merged": True,
+                        "title": merge_pr.title,
+                        "updated_at": merge_pr.updated_at,
+                    }
+                    notification = GitHubService.format_merge_notification(merge_pr)
+                    await self._notifier.send(notification)
+                else:
                     logger.info(
                         f"🆕 New branch detected: '{branch_name}' with {len(commits)} commits"
                     )
@@ -87,10 +110,27 @@ class TrackRepositoryUseCase:
                         latest, branch_name
                     )
                     await self._notifier.send(notification)
-                    changes_detected = True
+                changes_detected = True
         except Exception as e:
             logger.error(f"Error checking new branches: {e}")
         return changes_detected
+
+    async def _find_merge_pr_for_branch(
+        self, branch_name: str
+    ) -> Optional[PullRequest]:
+        """Find a merged PR where base_branch == branch_name (most recent)."""
+        prs = await self._github.get_pull_requests()
+        merged_into_branch = [
+            pr for pr in prs
+            if pr.merged and pr.base_branch == branch_name
+        ]
+        if not merged_into_branch:
+            return None
+        merged_into_branch.sort(
+            key=lambda p: p.updated_at or "1970-01-01",
+            reverse=True,
+        )
+        return merged_into_branch[0]
 
 
     async def _check_commits(self) -> bool:
@@ -114,14 +154,14 @@ class TrackRepositoryUseCase:
                         logger.info(
                             f"📬 Found {len(new_shas)} new commits in branch '{branch_name}'"
                         )
-                        for commit in reversed(commits):
-                            if commit.sha in new_shas:
-                                notification = GitHubService.format_commit_notification(
-                                    commit, branch_name
-                                )
-                                await self._notifier.send(notification)
-                                changes_detected = True
-                                await asyncio.sleep(0.5)
+                        new_commits = [
+                            c for c in reversed(commits) if c.sha in new_shas
+                        ]
+                        notification = GitHubService.format_push_notification(
+                            new_commits, branch_name
+                        )
+                        await self._notifier.send(notification)
+                        changes_detected = True
 
                         self._last_commit_shas[branch_name] = current_shas
                 except Exception as e:
@@ -149,14 +189,16 @@ class TrackRepositoryUseCase:
             old_state = self._last_pr_state[pr.number]
             if not old_state["merged"] and pr.merged:
                 pr_commits = await self._github.get_pull_request_commits(pr.number)
-                if pr_commits and pr.base_branch in self._last_commit_shas:
-                    pr_shas = {c.sha for c in pr_commits}
+                if pr.base_branch in self._last_commit_shas:
+                    pr_shas = {c.sha for c in pr_commits} if pr_commits else set()
+                    if pr.merge_commit_sha:
+                        pr_shas.add(pr.merge_commit_sha)
                     self._last_commit_shas[pr.base_branch].update(pr_shas)
                     logger.info(
-                        f"Added {len(pr_commits)} PR commits to tracking for branch '{pr.base_branch}'"
+                        f"Added {len(pr_shas)} commit SHAs to tracking for branch '{pr.base_branch}'"
                     )
 
-                notification = GitHubService.format_merge_notification(pr, pr_commits)
+                notification = GitHubService.format_merge_notification(pr)
                 await self._notifier.send(notification)
                 changes_detected = True
 
@@ -180,8 +222,8 @@ class TrackRepositoryUseCase:
     async def _check_updates(self) -> None:
         try:
             logger.info("🔍 Checking for updates...")
-            commit_changes = await self._check_commits()
             merge_changes = await self._check_merges()
+            commit_changes = await self._check_commits()
             if commit_changes or merge_changes:
                 logger.info("✅ Changes detected and notifications sent")
             else:

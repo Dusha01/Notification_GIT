@@ -59,7 +59,7 @@ async def _on_startup(bot: Bot) -> None:
     logger.info("🚀 Bot starting up...")
     logger.info(f"version: {__version__}")
     logger.info(f"📁 Tracking repository: {settings.GITHUB_REPO}")
-    logger.info(f"👥 Notification recipients: {len(settings.chat_ids_list)} users")
+    logger.info(f"👥 Notification recipients: {len(settings.chat_id_list)} users")
     asyncio.create_task(start_tracking(bot))
 
 

@@ -22,7 +22,7 @@ async def cmd_status(message: Message) -> None:
             chat_id=chat_id,
             repo=settings.GITHUB_REPO,
             interval=settings.CHECK_INTERVAL,
-            chat_count=len(settings.chat_ids_list),
+            chat_count=len(settings.chat_id_list),
         ),
         parse_mode="HTML",
     )

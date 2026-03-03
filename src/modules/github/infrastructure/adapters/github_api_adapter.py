@@ -64,7 +64,6 @@ class GitHubApiAdapter(GitHubRepository):
 
 
     async def get_branches(self) -> List[Branch]:
-        """Get all branches."""
         data = await self._request("branches?per_page=50")
         if not data:
             return []
@@ -105,6 +104,8 @@ class GitHubApiAdapter(GitHubRepository):
                 html_url=pr["html_url"],
                 merged=pr.get("merged", False),
                 base_branch=pr["base"]["ref"],
+                head_branch=pr["head"]["ref"],
+                merge_commit_sha=pr.get("merge_commit_sha"),
                 updated_at=pr.get("updated_at"),
             )
             for pr in data

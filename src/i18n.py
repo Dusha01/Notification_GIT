@@ -58,15 +58,29 @@ TRANSLATIONS = {
 """,
         "COMMIT_NEW_IN_BRANCH": "Новый коммит в ветке '{branch}'",
         "COMMIT_NEW": "Новый коммит",
+        "PUSH_NOTIFICATION": """
+📦 <b>Пуш в {repo}</b>
+
+🌿 <b>Ветка:</b> {branch}
+📊 <b>Коммитов:</b> {count}
+
+{commits_list}
+
+🔗 <a href='{url}'>Посмотреть изменения</a>
+""",
+        "PUSH_COMMIT_LINE": "• <code>{sha_short}</code> {message} — {author}\n",
+        "PUSH_AND_MORE": "... и ещё {count} коммитов\n",
         "MERGE_NOTIFICATION": """
-🎉 <b>Pull Request мерджнут: {repo}</b>
+🎉 <b>Слияние в {repo}</b>
 
 📋 <b>Заголовок:</b> {title}
+🔀 <b>Ветки:</b> {base_branch} ← {head_branch}
 👤 <b>Автор:</b> {author}
-🔢 <b>Номер:</b> #{number}
+🔢 <b>PR:</b> #{number}{merge_sha_line}
 
 🔗 <a href='{url}'>Посмотреть PR</a>
 """,
+        "MERGE_SHA_LINE": "\n🔖 <b>Merge commit:</b> <code>{merge_sha_short}</code>",
         "COMMITS_IN_PR": "\n\n📝 <b>Коммиты в PR:</b>\n",
         "AND_MORE_COMMITS": "... и ещё {count} коммитов",
         "NEW_BRANCH_NOTIFICATION": """
@@ -139,15 +153,29 @@ I automatically track repository: <code>{repo}</code>
 """,
         "COMMIT_NEW_IN_BRANCH": "New commit in branch '{branch}'",
         "COMMIT_NEW": "New commit",
+        "PUSH_NOTIFICATION": """
+📦 <b>Push to {repo}</b>
+
+🌿 <b>Branch:</b> {branch}
+📊 <b>Commits:</b> {count}
+
+{commits_list}
+
+🔗 <a href='{url}'>View changes</a>
+""",
+        "PUSH_COMMIT_LINE": "• <code>{sha_short}</code> {message} — {author}\n",
+        "PUSH_AND_MORE": "... and {count} more commits\n",
         "MERGE_NOTIFICATION": """
-🎉 <b>Pull Request merged: {repo}</b>
+🎉 <b>Merge in {repo}</b>
 
 📋 <b>Title:</b> {title}
+🔀 <b>Branches:</b> {base_branch} ← {head_branch}
 👤 <b>Author:</b> {author}
-🔢 <b>Number:</b> #{number}
+🔢 <b>PR:</b> #{number}{merge_sha_line}
 
 🔗 <a href='{url}'>View PR</a>
 """,
+        "MERGE_SHA_LINE": "\n🔖 <b>Merge commit:</b> <code>{merge_sha_short}</code>",
         "COMMITS_IN_PR": "\n\n📝 <b>Commits in PR:</b>\n",
         "AND_MORE_COMMITS": "... and {count} more commits",
         "NEW_BRANCH_NOTIFICATION": """

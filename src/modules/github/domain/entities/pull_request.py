@@ -11,4 +11,6 @@ class PullRequest:
     html_url: str
     merged: bool
     base_branch: str
+    head_branch: str
+    merge_commit_sha: Optional[str] = None
     updated_at: Optional[str] = None
