@@ -13,7 +13,6 @@ START_MESSAGE = """
 """
 
 
-
 STATUS_MESSAGE = """
 📊 <b>Статус отслеживания</b>
 
@@ -23,7 +22,6 @@ STATUS_MESSAGE = """
 
 🔄 <i>Проверяю обновления...</i>
 """
-
 
 
 HELP_MESSAGE = """

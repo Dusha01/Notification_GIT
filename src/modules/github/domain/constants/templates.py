@@ -11,8 +11,6 @@ COMMIT_NOTIFICATION = """
 """
 
 
-
-
 MERGE_NOTIFICATION = """
 🎉 <b>Pull Request мерджнут: {repo}</b>
 

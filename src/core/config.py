@@ -1,20 +1,21 @@
+from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Config(BaseSettings):
+class Settings(BaseSettings):
+
     APP_NAME: str = "Notification bot"
     DEBUG: bool = False
 
     HOST: str = "0.0.0.0"
     PORT: int = 8080
 
-    BOT_TOKEN: str
+    TELEGRAM_BOT_TOKEN: str
     GITHUB_REPO: str
-    CHAT_ID: str
-    GITHUB_TOKEN: str
+    CHAT_IDS: str = ""
+    GITHUB_TOKEN: str | None = None
 
-    CHECK_INTERVAL = 60
-
+    CHECK_INTERVAL: int = 60
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -23,4 +24,15 @@ class Config(BaseSettings):
         case_sensitive=False,
     )
 
-config = Config()
+    @property
+    def BOT_TOKEN(self) -> str:
+        return self.TELEGRAM_BOT_TOKEN
+
+    @property
+    def chat_ids_list(self) -> List[str]:
+        if not self.CHAT_IDS:
+            return []
+        return [cid.strip() for cid in self.CHAT_IDS.split(",") if cid.strip()]
+
+
+settings = Settings()
